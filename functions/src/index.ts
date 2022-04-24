@@ -1,26 +1,25 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
-import {
-  // randEmail,
-  // randPhoneNumber,
-  // randFullName,
-  randText,
-} from "@ngneat/falso";
-import {
-  Client,
-  // GeocodedWaypoint,
-  // LatLng,
-  // LatLngArray,
-} from "@googlemaps/google-maps-services-js";
-import axios from "axios";
+// import {
+//   // randEmail,
+//   // randPhoneNumber,
+//   // randFullName,
+//   randText,
+// } from "@ngneat/falso";
+// import {
+//   Client,
+//   LatLng,
+//   LatLngArray,
+// } from "@googlemaps/google-maps-services-js";
+// import axios from "axios";
 // import { QueryDocumentSnapshot } from "firebase-functions/v1/firestore";
-import { places } from "./places";
-import { getPathsFromDirectionResult } from "./utils";
+// import { places } from "./places";
+// import { getPathsFromDirectionResult } from "./utils";
 
 admin.initializeApp();
 
 const db = admin.firestore();
-const client = new Client({ axiosInstance: axios });
+// const client = new Client({ axiosInstance: axios });
 
 export const sleep = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -29,18 +28,57 @@ export const sleep = (ms: number) => {
 // type Parcels =
 //   admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData>[];
 
-// const getWaypoints = async (parcels: Parcels): LatLngArray => {
+// interface GetLocationsResult {
+//   origin: string;
+//   destination: string;
+//   waypoints: LatLngArray[];
+// }
+
+// const getWaypoints = (parcels: Parcels): LatLngArray[] => {
+//   const waypoints = parcels.map(parcel => [parcel.data().origin, parcel.data().destination] as LatLngArray);
+
+//   return waypoints;
+// }
+
+// const getLocations = async (parcels: Parcels): GetLocationsResult => {
+//   if (parcels.length === 1) {
+//     const parcel = parcels[0];
+//     const parcelData = parcel.data();
+
+//     return {
+//       origin: parcelData.origin,
+//       destination: parcelData.destination,
+//       waypoints: [],
+//     };
+//   }
+
+//   if (parcels.length === 2) {
+//     const parcel1 = parcels[0];
+//     const parcel2 = parcels[1];
+//     const parcel1Data = parcel1.data();
+//     const parcel2Data = parcel2.data();
+
+//     return {
+//       origin: parcel1Data.origin,
+//       destination: parcel2Data.destination,
+//       waypoints: [
+//         [parcel1Data.destination, parcel2Data.origin],
+//       ],
+//     };
+//   }
+
+//   const waypoints = getWaypoints(parcels);
 
 // }
 
 // const adjustUsers = async () => {
 //   const usersRef = db.collection("users");
-//   const users = await usersRef.get();
+//   // const users = await usersRef.get();
 //   const batch = db.batch();
 
-//   const newUsersCount = Math.floor(Math.random() * 15);
-//   const deletedUsersCount =
-//     users.docs.length <= 10 ? 4 : Math.floor(Math.random() * 10);
+//   const newUsersCount = Math.floor(Math.random() * 25);
+//   // const deletedUsersCount =
+//   //   users.docs.length <= 10 ? 4 : Math.floor(Math.random() * 10);
 
 //   for (let i = 0; i < newUsersCount; i++) {
 //     const fullName = randFullName();
@@ -58,14 +96,14 @@ export const sleep = (ms: number) => {
 //     batch.set(usersRef.doc(), user);
 //   }
 
-//   for (let i = 0; i < deletedUsersCount; i++) {
-//     const user = users.docs[Math.floor(Math.random() * users.docs.length)];
+//   // for (let i = 0; i < deletedUsersCount; i++) {
+//   //   const user = users.docs[Math.floor(Math.random() * users.docs.length)];
 
-//     if (user.data().parcels.length !== 0) continue;
+//   //   if (user.data().parcels.length !== 0) continue;
 
-//     console.log("deleting user", user.id);
-//     batch.delete(user.ref);
-//   }
+//   //   console.log("deleting user", user.id);
+//   //   batch.delete(user.ref);
+//   // }
 
 //   await batch.commit();
 // };
@@ -112,62 +150,47 @@ const trackVehicles = async () => {
   await batch.commit();
 };
 
-const addParcels = async () => {
-  const parcelsRef = db.collection("parcels");
-  const usersRef = db.collection("users");
-  const countsRef = db.collection("total-counts");
-  const users = await usersRef.get();
-  const count = (await countsRef.get()).docs[0];
-  const batch = db.batch();
+// const addParcels = async () => {
+//   const parcelsRef = db.collection("parcels");
+//   const usersRef = db.collection("users");
+//   const users = await usersRef.get();
+//   const batch = db.batch();
 
-  const newParcelsCount = Math.floor(Math.random() * 50);
+//   const newParcelsCount = Math.floor(Math.random() * 50);
 
-  for (let i = 0; i < newParcelsCount; i++) {
-    const user = users.docs[Math.floor(Math.random() * users.docs.length)];
-    const origin = places[Math.floor(Math.random() * places.length)];
-    const destination = places[Math.floor(Math.random() * places.length)];
+//   for (let i = 0; i < newParcelsCount; i++) {
+//     const user = users.docs[Math.floor(Math.random() * users.docs.length)];
+//     const origin = places[Math.floor(Math.random() * places.length)];
+//     const destination = places[Math.floor(Math.random() * places.length)];
 
-    const res = await client.directions({
-      params: {
-        origin: origin.properties.formatted,
-        destination: destination.properties.formatted,
-        key: "AIzaSyB3mwDlUpE2G4pMlnPIeJHv4R7kAqmHKsM",
-      },
-    });
-    const paths = getPathsFromDirectionResult(res.data);
-    const parcel = {
-      status: "Inventory",
-      userId: user.id,
-      description: randText({ length: Math.floor(Math.random() * 100) }),
-      origin: origin.properties.formatted,
-      destination: destination.properties.formatted,
-      paths,
-    };
+//     const res = await client.directions({
+//       params: {
+//         origin: origin.properties.formatted,
+//         destination: destination.properties.formatted,
+//         key: "AIzaSyB3mwDlUpE2G4pMlnPIeJHv4R7kAqmHKsM",
+//       },
+//     });
+//     console.log(res.data);
+//     const paths = getPathsFromDirectionResult(res.data);
+//     const parcel = {
+//       status: "Inventory",
+//       userId: user.id,
+//       description: randText({ length: Math.floor(Math.random() * 100) }),
+//       origin: origin.properties.formatted,
+//       destination: destination.properties.formatted,
+//       paths,
+//     };
 
-    batch.set(parcelsRef.doc(), parcel);
-    batch.update(usersRef.doc(user.id), {
-      parcels: admin.firestore.FieldValue.arrayUnion(parcelsRef.doc().id),
-    });
-  }
+//     const parcelRef = parcelsRef.doc();
 
-  batch.update(countsRef.doc(count.id), {
-    inventoryParcels: admin.firestore.FieldValue.increment(newParcelsCount),
-  });
+//     batch.set(parcelRef, parcel);
+//     batch.update(usersRef.doc(user.id), {
+//       parcels: admin.firestore.FieldValue.arrayUnion(parcelRef.id),
+//     });
+//   }
 
-  await batch.commit();
-};
-
-// export const adjustUsersScheduled = functions.pubsub
-//   .schedule("* * * * *")
-//   .onRun(async (context) => {
-//     const promises: Promise<any>[] = [];
-
-//     promises.push(adjustUsers());
-//     await sleep(25000);
-//     promises.push(adjustUsers());
-
-//     return Promise.all(promises);
-//   });
+//   await batch.commit();
+// };
 
 // const sendToDelivery = async () => {
 //   const parcelsRef = db.collection("parcels");
@@ -231,7 +254,7 @@ const addParcels = async () => {
 //       origin: origin.properties.formatted,
 //       destination: destination.properties.formatted,
 //       key: "AIzaSyB3mwDlUpE2G4pMlnPIeJHv4R7kAqmHKsM",
-//       waypoints
+
 //     },
 //   });
 
@@ -239,6 +262,16 @@ const addParcels = async () => {
 //     (vehicle) => vehicle.data().status !== "idle"
 //   );
 // };
+
+// export const adjustUsersScheduled = functions.pubsub
+//   .schedule("* * * * *")
+//   .onRun(async (context) => {
+//     const promises: Promise<any>[] = [];
+
+//     promises.push(adjustUsers());
+
+//     return Promise.all(promises);
+//   });
 
 export const trackVehiclesScheduled = functions.pubsub
   .schedule("* * * * *")
@@ -258,16 +291,12 @@ export const trackVehiclesScheduled = functions.pubsub
     return Promise.all(promises);
   });
 
-export const addParcelsScheduled = functions.pubsub
-  .schedule("* * * * *")
-  .onRun(async (context) => {
-    const promises: Promise<any>[] = [];
+// export const addParcelsScheduled = functions.pubsub
+//   .schedule("* * * * *")
+//   .onRun(async (context) => {
+//     const promises: Promise<any>[] = [];
 
-    promises.push(addParcels());
-    // await sleep(17500);
-    // promises.push(addParcels());
-    // await sleep(17500);
-    // promises.push(addParcels());
+//     promises.push(addParcels());
 
-    return Promise.all(promises);
-  });
+//     return Promise.all(promises);
+//   });
